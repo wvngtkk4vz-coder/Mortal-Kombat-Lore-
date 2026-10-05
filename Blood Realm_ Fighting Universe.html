@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Blood Realm: Fighting Universe</title>
+<style>
+:root{--bg:#0b0b10;--p:#16161f;--t:#eee;--m:#9a9aa8;--a:#d6222b;--g:#e0a526;--b:#2a2a38;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f1f0ee;--p:#fff;--t:#16161c;--m:#666;--b:#d8d6d2}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:14px/1.45 system-ui,sans-serif}
+h1{font:900 22px Impact,sans-serif;letter-spacing:3px;color:var(--a);margin:10px 12px 0}h2{font:800 17px Impact,sans-serif;letter-spacing:2px;color:var(--g);margin:14px 0 6px}
+nav{display:flex;overflow-x:auto;gap:4px;padding:8px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5}
+nav button{white-space:nowrap}main{padding:8px 12px 40px;max-width:900px;margin:auto}
+button,select,input,textarea{font:inherit;color:var(--t);background:var(--p);border:1px solid var(--b);border-radius:6px;padding:6px 9px}
+button{cursor:pointer;font-weight:700;letter-spacing:.5px}button.on,button.pri{background:var(--a);border-color:var(--a);color:#fff}button:disabled{opacity:.4}
+.card{background:var(--p);border:1px solid var(--b);border-radius:8px;padding:10px;margin:6px 0}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.grid .card{margin:0;text-align:center;cursor:pointer}
+label{display:block;font-size:12px;color:var(--m);margin-top:6px}input[type=text],input[type=number],textarea,select{width:100%}
+.m{color:var(--m)}.big{font:900 26px Impact,sans-serif;letter-spacing:2px;text-align:center}.feed p{margin:3px 0;padding:3px 6px;border-left:3px solid var(--b)}
+.feed .r{font:900 18px Impact;color:var(--g);border-color:var(--g);margin-top:10px}.feed .c{color:var(--a);font-weight:700;border-color:var(--a)}.feed .f{font:900 24px Impact;color:var(--a);text-align:center;letter-spacing:3px}
+.feed .s{font-style:italic;color:var(--m)}.bar{height:9px;background:var(--b);border-radius:5px;overflow:hidden}.bar i{display:block;height:100%}
+.br{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px}.rd{min-width:170px;display:flex;flex-direction:column;justify-content:space-around;gap:6px}
+.mt{border:1px solid var(--b);border-radius:6px;background:var(--p);font-size:12px}.mt div{padding:3px 6px}.mt .w{color:var(--g);font-weight:800}
+.tag{font-size:11px;padding:1px 6px;border-radius:9px;background:var(--b)}
+</style></head><body>
+<h1>BLOOD REALM</h1><nav id="nav"></nav><main id="main"></main>
+<script>
+const TABS=['Home','Create Fighter','Fighters','Tournaments','Bracket','Live Fight','Rankings','Rivalries','News','History','Hall of Fame'];
+const STY=['Shadow Assassin','Iron Brawler','Pyromancer','Blade Dancer','Storm Caller','Beast Tamer','Void Monk','Cyber Boxer'];
+const ARENAS=[['The Bone Foundry','molten gears'],['Crimson Temple','shattered pillars'],['Ash Coliseum','lava vents'],['Sunken Abyss','spiked coral'],['Neon Dumpster Dojo','exploding barrels'],['Frozen Gallows','icicle racks']];
+const SYL=['Ra','Ven','Kane','Zor','Mal','Dra','Ka','Vex','Thor','Ni','Sol','Bra','Gor','Lyx','Ash','Mor'],NICK=['The Butcher','The Shadow','Soul Eater','Iron Saint','Grave Dancer','The Inferno','Ruin Bringer','Whisper of Ash','Thunder Jaw','The Hollow King'];
+const ABIL=['Shadow Step','Inferno Burst','Gravity Crush','Bone Storm','Void Rift','Thunder Fist','Mirror Phantom','Blood Frenzy','Frost Chains','Soul Siphon'],MOVES=['Skull Splitter','Rising Cinder','Hook of Ruin','Dragon Slam','Tomb Kick','Rend Combo'],FINS=['Soul Harvest','Abyss Collapse','Crimson Eclipse','Infernal Judgement','Shatter Requiem'];
+const STATS=['spd','str','dur','agi','int','skl','sta','pow','def','lck'],SN={spd:'Speed',str:'Strength',dur:'Durability',agi:'Agility',int:'Intelligence',skl:'Skill',sta:'Stamina',pow:'Power',def:'Defense',lck:'Luck'};
+const LOOK={outfit:['Tattered Robes','Plate Armor','Ninja Wraps','Leather Duster','Cyber Suit'],hair:['Bald','Topknot','Long Wild','Mohawk','Hooded'],face:['Masked','Scarred','Stoic','Snarling','Skull-painted'],body:['Lean','Bulky','Giant','Wiry'],acc:['None','Chains','Horns','Cape','Glowing Eye'],wpn:['Fists','Twin Blades','War Axe','Chain Scythe','Staff']};
+const R=n=>Math.floor(Math.random()*n),P=a=>a[R(a.length)],cl=(x,a,b)=>Math.max(a,Math.min(b,x)),E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let G=(()=>{try{return JSON.parse(localStorage.getItem('br1'))}catch(e){}})()||{f:[],t:null,hist:[],news:[],h2h:{},riv:{},hof:[],year:1,id:1};
+let tab='Home',sel=new Set(),seeded=false,open=null,LIVE={timer:null,m:null,lines:[],i:0,res:null},cform={};
+const save=()=>{try{localStorage.setItem('br1',JSON.stringify(G))}catch(e){}};
+const FM=id=>G.f.find(f=>f.id==id),tot=f=>STATS.reduce((s,k)=>s+f.stats[k],0);
+const score=f=>f.w*3+f.titles*12+f.kos*2-f.l+f.streak+tot(f)/40;
+const rank=()=>G.f.filter(f=>!f.dead&&!f.ret).sort((a,b)=>score(b)-score(a));
+const news=(h,t)=>{G.news.unshift({h,t,y:G.year});G.news=G.news.slice(0,80)};
+const hk=(a,b)=>[a,b].sort().join('|'),H=(a,b)=>G.h2h[hk(a,b)]||{n:0,w:{},last:null};
+function rndFighter(){const st=P(STY),s={};STATS.forEach(k=>s[k]=20+R(70));s.str+=st=='Iron Brawler'?15:0;s.agi+=st=='Shadow Assassin'?15:0;s.pow+=st=='Pyromancer'?15:0;STATS.forEach(k=>s[k]=cl(s[k],10,99));
+const a=[P(ABIL),P(ABIL)];return{name:P(SYL)+P(SYL).toLowerCase(),nick:P(NICK),age:18+R(40),height:150+R(70)+' cm',origin:P(['Ashlands','Hollow City','Sunken Reach','Iron Peaks','The Void']),story:'Forged in blood, seeking glory in the tournament.',pers:P(['Cold','Arrogant','Honorable','Savage','Playful','Brooding']),style:st,align:P(['Hero','Villain','Neutral','Wildcard']),abil:a.join(', '),sigs:P(MOVES)+', '+P(MOVES),fin:P(FINS),weak:P(['Pride','Fire','Fatigue','Overconfidence']),weapon:P(LOOK.wpn),stats:s,look:{outfit:P(LOOK.outfit),hair:P(LOOK.hair),face:P(LOOK.face),body:P(LOOK.body),acc:P(LOOK.acc),wpn:P(LOOK.wpn),c1:'#'+(R(0xffffff)|0x333333).toString(16).slice(0,6).padStart(6,'3'),c2:'#'+R(0xffffff).toString(16).padStart(6,'0')},faction:P(['','','Ash Clan','Void Order','Iron Syndicate'])}}
+function addF(o){o.id=G.id++;Object.assign(o,{w:0,l:0,kos:0,fins:0,streak:0,best:0,titles:0,inj:0,ret:false,dead:false,hist:[]});G.f.push(o);news('New challenger: '+o.name+' "'+o.nick+'"','A new fighter enters the realm.');save();return o}
+function av(f,s=70){if(f.img)return`<img src="${f.img}" width="${s}" height="${s}" style="border-radius:50%;object-fit:cover">`;const l=f.look||{},w=l.body=='Giant'?34:l.body=='Bulky'?30:l.body=='Wiry'?18:24;
+return`<svg width="${s}" height="${s}" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${l.c2||'#444'}" opacity=".35"/><rect x="${50-w}" y="55" width="${w*2}" height="45" rx="10" fill="${l.c1||'#888'}"/><circle cx="50" cy="38" r="20" fill="#d9b48f"/>${l.hair!='Bald'?`<path d="M30 36Q50 8 70 36Q50 22 30 36" fill="${l.c2}"/>`:''}${l.face=='Masked'?`<rect x="30" y="38" width="40" height="16" fill="${l.c1}"/>`:''}<circle cx="43" cy="38" r="3" fill="${l.acc=='Glowing Eye'?'#f33':'#111'}"/><circle cx="57" cy="38" r="3" fill="#111"/>${l.acc=='Horns'?`<path d="M30 22l-8-14 14 10M70 22l8-14-14 10" fill="${l.c2}"/>`:''}</svg>`}
+function mk(f){return`<div class="card" onclick="open=${f.id};go('Fighters')"><div>${av(f,64)}</div><b>${E(f.name)}</b><div class="m">"${E(f.nick)}"</div><div class="m">${f.w}-${f.l}${f.dead?' ☠':f.ret?' (ret)':f.inj?' 🩹':''}</div></div>`}
+// ---------- battle engine
+function fight(a,b,arena){const L=[],P2=[a,b].map(f=>({f,s:f.stats,hp:0,max:Math.round(70+f.stats.dur*.7+f.stats.sta*.2),st:100,mo:0,sp:20,rw:0,pen:f.inj?.82:1}));
+const h=H(a.id,b.id),nm=i=>P2[i].f.name.toUpperCase();L.push(['t',`ARENA: ${arena[0]}`]);
+L.push(['t',`FIGHTER 1 — ${nm(0)} "${a.nick}" (${a.w}-${a.l})  VS  FIGHTER 2 — ${nm(1)} "${b.nick}" (${b.w}-${b.l})`]);
+L.push(['s',`Announcer: "${P(['Two legends collide!','Blood will be spilled tonight!','The crowd is on its feet!'])}"`]);
+if(h.n)L.push(['c',`Rivalry: they have fought ${h.n} time(s). ${h.last||''}`]);if(a.faction&&a.faction==b.faction)L.push(['c',`BETRAYAL: both belong to ${a.faction}!`]);
+L.push(['s',`${nm(0)}: "${P(['You will fall.','Your story ends here.','Let us dance.'])}" ${nm(1)}: "${P(['Come then.','Pathetic.','I have waited for this.'])}"`]);L.push(['f','FIGHT!']);
+let ko=false,hit=0;
+for(let r=1;r<=3&&P2[0].rw<2&&P2[1].rw<2;r++){P2.forEach(p=>{p.hp=p.max;p.st=100;p.mo=0});L.push(['r',`ROUND ${r}`]);
+for(let t=0;t<18;t++){const wt=P2.map(p=>p.s.spd+p.s.agi+R(60)+p.mo),i=wt[0]>=wt[1]?0:1,A=P2[i],D=P2[1-i],an=nm(i),dn=nm(1-i);let mv,mult=1,big=false;
+const ab=A.f.abil.split(',').map(x=>x.trim()).filter(Boolean),sg=A.f.sigs.split(',').map(x=>x.trim()).filter(Boolean);
+if(A.sp>=100&&ab.length){mv=P(ab);mult=2.2;A.sp=0;big=true;L.push(['c',`${an} activates ${mv}!`])}else if(A.sp>=60&&sg.length&&Math.random()<.4){mv=P(sg);mult=1.6;A.sp-=40;big=true;L.push(['c',`${an} unleashes signature move ${mv}!`])}
+else{mv=P(['a strike','a combo','a heavy kick','an uppercut','a '+(A.f.weapon||'fist')+' swing']);L.push(['t',`${an} attacks with ${mv}.`])}
+const dodge=(D.s.agi*.002+D.s.spd*.001)*(big?.5:1),blk=(D.s.def*.002+D.s.skl*.001)*(big?.6:1),x=Math.random();
+let dmg=(A.s.str*.5+A.s.pow*.5)*(.35+Math.random()*.3)*mult*(.6+A.st/250)*(1+A.mo/300)*A.pen;A.st=cl(A.st-(big?10:5),0,100);
+if(x<dodge){L.push(['t',`${dn} dodges. ${an} misses.`]);D.mo+=8;A.mo-=6;continue}
+if(x<dodge+blk){dmg*=.25;L.push(['t',`${dn} blocks.`]);D.st-=3;if(Math.random()<D.s.int*.003+D.s.skl*.002){const cd=(D.s.str+D.s.skl)*.3*(.7+Math.random()*.6);A.hp-=cd;D.mo+=12;A.mo-=10;L.push(['c',`${dn} counters with a heavy strike! (-${Math.round(cd)})`]);if(Math.random()<.4)L.push(['t',`${an} is stunned.`])}}
+else if(Math.random()<.05+A.s.lck*.002+A.s.skl*.001){dmg*=1.8;L.push(['c',`CRITICAL! ${an} lands a crushing blow!`])}
+else L.push(['t',`It connects.`]);
+if(Math.random()<.08){dmg+=9;L.push(['t',`${an} slams ${dn} into the ${arena[1]}!`])}
+dmg=Math.max(3,dmg-D.s.def*.12);D.hp-=dmg;A.mo+=8;D.mo-=6;A.sp+=8+A.s.pow*.08;D.sp+=dmg*.5;D.sp=Math.min(D.sp,100);A.sp=Math.min(A.sp,100);P2.forEach(p=>p.mo=cl(p.mo,-60,60));
+if(Math.abs(A.mo)>=40&&Math.random()<.3)L.push(['s','The momentum swings.']);
+if(D.hp<=0){ko=true;break}}
+const wi=P2[0].hp>P2[1].hp?0:1;P2[wi].rw++;L.push(['t',`${nm(wi)} wins round ${r}${ko?' by KNOCKOUT':''}. (${Math.round(P2[0].hp)} vs ${Math.round(P2[1].hp)} HP)`]);ko=false}
+const w=P2[0].rw>P2[1].rw?0:1,W=P2[w],Lo=P2[1-w],dec=Lo.hp<=0||W.hp>W.max*.5;let fin=false;
+if(dec&&Math.random()<.5+W.s.lck*.003){fin=true;L.push(['f','FINISH HIM']);L.push(['c',`${nm(w)} activates ${W.f.fin||'a brutal finisher'}!`]);L.push(['t',`${nm(1-w)} attempts to escape.`]);L.push(['t',`${nm(w)} catches him.`]);L.push(['c',P(['A stylized spectacle of crimson light fills the arena.','The arena shakes as the finisher plays out in silhouette.','Shadows and sparks erupt — the crowd roars.'])])}
+L.push(['f',`${nm(w)} WINS`]);return{w:[a,b][w].id,l:[a,b][1-w].id,fin,sc:`${P2[w].rw}-${P2[1-w].rw}`,L}}
+function apply(m,res){if(m.w)return;const W=FM(res.w),Lo=FM(res.l),T=G.t;m.w=res.w;m.sc=res.sc;m.fin=res.fin;
+W.w++;Lo.l++;W.streak=W.streak>0?W.streak+1:1;Lo.streak=Lo.streak<0?Lo.streak-1:-1;W.best=Math.max(W.best,W.streak);if(res.fin){W.kos++;W.fins++;Lo.inj=2}else if(Math.random()<.3)Lo.inj=1;if(W.inj)W.inj--;
+const k=hk(W.id,Lo.id),h=H(W.id,Lo.id);h.n++;h.w[W.id]=(h.w[W.id]||0)+1;h.last=`${W.name} beat ${Lo.name} (${res.sc}) in ${T.name}.`;G.h2h[k]=h;
+news(`${W.name} ${res.fin?'FINISHES':'defeats'} ${Lo.name}`,`${res.sc} in ${T.name}.${res.fin?' A brutal '+W.fin+'.':''}${W.streak>=3?' Win streak: '+W.streak+'.':''}${Lo.streak<=-3?' '+Lo.name+' has lost '+(-Lo.streak)+' straight.':''}${W.faction&&W.faction==Lo.faction?' Betrayal within '+W.faction+'!':''}`);
+if(h.n==2&&!G.riv[k])G.riv[k]=1,news('New rivalry: '+W.name+' vs '+Lo.name,'They have clashed twice.');
+const rd=T.rounds[T.cur];if(rd.every(x=>x.w)){if(rd.length==1){T.done=true;T.champ=W.id;W.titles++;const ch={y:G.year,name:T.name,champ:W.name,id:W.id,final:`${W.name} def. ${Lo.name} ${res.sc}`};G.hist.unshift(ch);if(!G.hof.includes(W.id)&&W.titles>=1)G.hof.push(W.id);news(`${W.name} WINS ${T.name.toUpperCase()}`,'A new champion is crowned.');
+if(T.perma)G.f.forEach(f=>{if(f.dead||f.ret)return;if(f.l>=8&&Math.random()<.25){f.ret=true;news(f.name+' retires','After a long career.')}else if(f.id==Lo.id&&res.fin&&Math.random()<.12){f.dead=true;news(f.name+' has fallen','Killed in the tournament.')}});G.year++}
+else{T.cur++;const nx=rd.map(x=>x.w),n=[];for(let i=0;i<nx.length;i+=2)n.push({a:nx[i],b:nx[i+1]});T.rounds.push(n)}}save()}
+const nextM=()=>{const T=G.t;if(!T||T.done)return null;return T.rounds[T.cur].find(m=>!m.w)};
+function startT(name,size,ids,perma){let pool=ids.filter(i=>FM(i)&&!FM(i).dead&&!FM(i).ret);const rest=G.f.filter(f=>!pool.includes(f.id)&&!f.dead&&!f.ret);while(pool.length<size&&rest.length)pool.push(rest.splice(R(rest.length),1)[0].id);while(pool.length<size)pool.push(addF(rndFighter()).id);pool=pool.slice(0,size);
+if(seeded)pool.sort((x,y)=>score(FM(y))-score(FM(x)));else pool.sort(()=>Math.random()-.5);
+const n=[];if(seeded)for(let i=0;i<size/2;i++)n.push({a:pool[i],b:pool[size-1-i]});else for(let i=0;i<size;i+=2)n.push({a:pool[i],b:pool[i+1]});
+G.t={name,size,rounds:[n],cur:0,done:false,perma};news('Tournament begins: '+name,size+' fighters enter.');save()}
+function simOne(live){const m=nextM();if(!m||LIVE.timer)return;const a=FM(m.a),b=FM(m.b),res=fight(a,b,P(ARENAS));if(!live){apply(m,res);return}
+LIVE={timer:1,m,lines:res.L,i:0,res};go('Live Fight');LIVE.timer=setInterval(()=>{if(LIVE.i>=LIVE.lines.length)return endLive();LIVE.i++;draw()},650)}
+function endLive(){clearInterval(LIVE.timer);const r=LIVE.res,m=LIVE.m;LIVE.timer=null;LIVE.i=LIVE.lines.length;if(m&&r)apply(m,r);LIVE.m=null;draw()}
+function simAll(){if(LIVE.timer)return;let g=0;while(nextM()&&g++<300)simOne(false);draw()}
+// ---------- UI
+const go=t=>{tab=t;draw()};
+function bar(v,max,c){return`<div class="bar"><i style="width:${cl(v/max*100,0,100)}%;background:${c}"></i></div>`}
+function draw(){$nav();const M=document.getElementById('main'),rk=rank();let h='';
+if(tab=='Home'){const m=nextM();h=`<h2>CURRENT TOURNAMENT</h2><div class="card">${G.t?`<b>${E(G.t.name)}</b> ${G.t.done?'— Champion: '+E(FM(G.t.champ)?.name):'— Round '+(G.t.cur+1)}${m?`<div class="m">Next: ${E(FM(m.a).name)} vs ${E(FM(m.b).name)}</div>`:''}`:'<span class="m">None. Go to Tournaments.</span>'}</div><h2>LATEST NEWS</h2>${G.news.slice(0,6).map(nw).join('')||'<div class="m">Quiet realm. Create fighters!</div>'}<h2>FIGHTERS: ${G.f.length}</h2>`}
+else if(tab=='Create Fighter'){return drawCreate()}
+else if(tab=='Fighters'){if(open&&FM(open)){const f=FM(open);h=`<button onclick="open=null;draw()">← Back</button><div class="card"><div class="row">${av(f,110)}<div><div class="big" style="text-align:left">${E(f.name)}</div><div>"${E(f.nick)}" · ${E(f.style)} · ${E(f.align)}</div><div class="m">Age ${E(f.age)} · ${E(f.height)} · ${E(f.origin)} · ${E(f.faction||'No faction')}</div></div></div><p>${E(f.story)}</p><div class="m">Personality: ${E(f.pers)} · Weakness: ${E(f.weak)} · Weapon: ${E(f.weapon)}</div><p><b>Abilities:</b> ${E(f.abil)}<br><b>Signatures:</b> ${E(f.sigs)}<br><b>Finisher:</b> ${E(f.fin)}</p><p>Record ${f.w}-${f.l} · KOs ${f.kos} · Titles ${f.titles} · Streak ${f.streak}${f.inj?' · INJURED':''}</p>${STATS.map(k=>`<div class="m">${SN[k]} ${f.stats[k]}</div>${bar(f.stats[k],100,'var(--a)')}`).join('')}</div>`}
+else h=`<h2>ALL FIGHTERS (${G.f.length})</h2><div class="grid">${G.f.map(mk).join('')||'<div class="m">None yet.</div>'}</div>`}
+else if(tab=='Tournaments'){h=`<h2>NEW TOURNAMENT</h2><div class="card"><label>Name</label><input type="text" id="tn" value="${E(cform.tn||'Blood Cup '+G.year)}" onchange="cform.tn=this.value"><label>Size</label><select id="ts" onchange="cform.ts=this.value">${[8,16,32,64,128].map(s=>`<option ${cform.ts==s?'selected':''}>${s}</option>`).join('')}</select><label><input type="checkbox" id="tp" ${cform.tp?'checked':''} onchange="cform.tp=this.checked"> Retirements/deaths enabled</label><label><input type="checkbox" ${seeded?'checked':''} onchange="seeded=this.checked"> Seed by ranking</label><div class="row" style="margin-top:8px"><button onclick="rndPick()">Randomize picks</button><button onclick="sel.clear();draw()">Clear</button><button class="pri" onclick="beginT()">START</button></div><div class="m">Selected ${sel.size}. Empty slots are auto-filled (new fighters generated if needed).</div></div><h2>CHOOSE FIGHTERS</h2><div class="grid">${G.f.filter(f=>!f.dead&&!f.ret).map(f=>`<div class="card" style="${sel.has(f.id)?'outline:2px solid var(--a)':''}" onclick="sel.has(${f.id})?sel.delete(${f.id}):sel.add(${f.id});draw()">${E(f.name)}<div class="m">${f.w}-${f.l}</div></div>`).join('')}</div>`}
+else if(tab=='Bracket'){const T=G.t;h=T?`<h2>${E(T.name)}</h2><div class="row"><button onclick="simOne(true)" ${!nextM()||LIVE.timer?'disabled':''}>Watch next fight</button><button onclick="simOne(false);draw()" ${!nextM()||LIVE.timer?'disabled':''}>Sim next</button><button class="pri" onclick="simAll()" ${!nextM()||LIVE.timer?'disabled':''}>Sim entire tournament</button></div><div class="br">${T.rounds.map((rd,i)=>`<div class="rd"><div class="m">${rd.length==1?'FINAL':'Round '+(i+1)}</div>${rd.map(m=>`<div class="mt">${[m.a,m.b].map(id=>`<div class="${m.w==id?'w':''}">${E(FM(id)?.name)}</div>`).join('')}</div>`).join('')}</div>`).join('')}</div>`:'<div class="m">No tournament running.</div>'}
+else if(tab=='Live Fight'){const m=LIVE.m||nextM();h=`<h2>LIVE FIGHT</h2><div class="row"><button onclick="simOne(true)" ${!nextM()||LIVE.timer?'disabled':''}>Start next fight</button><button onclick="endLive()" ${LIVE.timer?'':'disabled'}>Skip / finish</button></div><div class="feed card">${LIVE.lines.slice(0,LIVE.i).map(l=>`<p class="${l[0]}">${E(l[1])}</p>`).join('')||'<span class="m">Press start.</span>'}</div>`}
+else if(tab=='Rankings'){h=`<h2>POWER RANKINGS</h2>${rk.map((f,i)=>`<div class="card row" onclick="open=${f.id};go('Fighters')">#${i+1} ${av(f,36)}<b>${E(f.name)}</b><span class="m">${f.w}-${f.l} · ${f.kos} finishes · ${f.titles} titles · streak ${f.streak}</span></div>`).join('')}`}
+else if(tab=='Rivalries'){const o=G.f.map(f=>`<option value="${f.id}">${E(f.name)}</option>`).join('');h=`<h2>RIVALRIES</h2><div class="card row"><select id="r1">${o}</select><select id="r2">${o}</select><button onclick="mkRiv()">Create feud</button></div>`+Object.keys(G.riv).map(k=>{const[a,b]=k.split('|').map(Number),x=H(a,b);return FM(a)&&FM(b)?`<div class="card"><b>${E(FM(a).name)} vs ${E(FM(b).name)}</b><div class="m">${x.n} fights · ${E(x.last||'Unsettled score.')}</div></div>`:''}).join('')}
+else if(tab=='News'){h='<h2>NEWS</h2>'+(G.news.map(nw).join('')||'<div class="m">Nothing yet.</div>')}
+else if(tab=='History'){h='<h2>PAST CHAMPIONS</h2>'+(G.hist.map(c=>`<div class="card"><b>Year ${c.y}: ${E(c.name)}</b><div>${E(c.champ)}</div><div class="m">${E(c.final)}</div></div>`).join('')||'<div class="m">No history yet.</div>')}
+else if(tab=='Hall of Fame'){h='<h2>HALL OF FAME</h2><div class="grid">'+G.f.filter(f=>f.titles>=1||G.hof.includes(f.id)).sort((a,b)=>score(b)-score(a)).map(mk).join('')+'</div>'}
+M.innerHTML=h}
+const nw=n=>`<div class="card"><b>${E(n.h)}</b><div class="m">Y${n.y} · ${E(n.t)}</div></div>`;
+function $nav(){document.getElementById('nav').innerHTML=TABS.map(t=>`<button class="${t==tab?'on':''}" onclick="go('${t}')">${t.toUpperCase()}</button>`).join('')}
+function rndPick(){sel.clear();const s=+(cform.ts||8),a=G.f.filter(f=>!f.dead&&!f.ret).sort(()=>Math.random()-.5);a.slice(0,s).forEach(f=>sel.add(f.id));draw()}
+function beginT(){if(LIVE.timer||(G.t&&!G.t.done&&!confirm('Replace current tournament?')))return;startT(document.getElementById('tn').value||'Cup',+document.getElementById('ts').value,[...sel],document.getElementById('tp').checked);sel.clear();go('Bracket')}
+function mkRiv(){const a=+document.getElementById('r1').value,b=+document.getElementById('r2').value;if(!a||!b||a==b)return;G.riv[hk(a,b)]=1;news('Feud declared: '+FM(a).name+' vs '+FM(b).name,'Bad blood.');save();draw()}
+let imgData='',cs={};
+function drawCreate(){const o=(k)=>LOOK[k].map(v=>`<option>${v}</option>`).join('');const T=(id,l)=>`<label>${l}</label><input type="text" id="c_${id}">`;
+document.getElementById('main').innerHTML=`<h2>CREATE FIGHTER</h2><div class="card"><div class="row"><button onclick="fillRnd()">🎲 Random fighter</button></div>${T('name','Name')+T('nick','Nickname / title')+T('age','Age')+T('height','Height')+T('origin','Origin')+T('faction','Faction (optional)')}<label>Backstory</label><textarea id="c_story"></textarea>${T('pers','Personality')}<label>Fighting style</label><input type="text" id="c_style" list="sty"><datalist id="sty">${STY.map(s=>`<option>${s}`).join('')}</datalist><label>Alignment</label><select id="c_align"><option>Hero<option>Villain<option>Neutral<option>Wildcard</select>${T('abil','Special abilities (comma separated)')+T('sigs','Signature moves (comma separated)')+T('fin','Finishing move')+T('weak','Weaknesses')+T('weapon','Weapon')}
+<h2>LOOK</h2>${Object.keys(LOOK).map(k=>`<label>${k}</label><select id="l_${k}">${o(k)}</select>`).join('')}<div class="row"><div><label>Primary color</label><input type="color" id="l_c1" value="#aa2222"></div><div><label>Secondary color</label><input type="color" id="l_c2" value="#222244"></div></div><label>Portrait image (optional)</label><input type="file" id="c_img" accept="image/*" onchange="loadImg(this)">
+<h2>STATS</h2>${STATS.map(k=>`<label>${SN[k]} <span id="v_${k}">50</span></label><input type="range" min="1" max="99" value="50" id="s_${k}" oninput="v_${k}.textContent=this.value">`).join('')}<button class="pri" style="margin-top:12px;width:100%" onclick="saveF()">CREATE FIGHTER</button></div>`}
+function loadImg(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=160;c.getContext('2d').drawImage(im,0,0,160,160);imgData=c.toDataURL('image/jpeg',.7)};im.src=r.result};r.readAsDataURL(f)}
+function fillRnd(){const r=rndFighter();['name','nick','age','height','origin','faction','story','pers','style','abil','sigs','fin','weak','weapon'].forEach(k=>document.getElementById('c_'+k).value=r[k]);document.getElementById('c_align').value=r.align;Object.keys(LOOK).forEach(k=>document.getElementById('l_'+k).value=r.look[k]);['c1','c2'].forEach(k=>document.getElementById('l_'+k).value=r.look[k]);STATS.forEach(k=>{document.getElementById('s_'+k).value=r.stats[k];document.getElementById('v_'+k).textContent=r.stats[k]})}
+function saveF(){const g=k=>document.getElementById(k).value,name=g('c_name').trim();if(!name)return alert('Name required');if(G.f.some(f=>f.name.toLowerCase()==name.toLowerCase()))return alert('Name already exists');
+const o={};['name','nick','age','height','origin','faction','story','pers','style','abil','sigs','fin','weak','weapon'].forEach(k=>o[k]=g('c_'+k));o.align=g('c_align');o.look={};Object.keys(LOOK).forEach(k=>o.look[k]=g('l_'+k));o.look.c1=g('l_c1');o.look.c2=g('l_c2');o.stats={};STATS.forEach(k=>o.stats[k]=+g('s_'+k));if(imgData)o.img=imgData;imgData='';o.name=name;addF(o);open=o.id;go('Fighters')}
+if(!G.f.length)for(let i=0;i<8;i++)addF(rndFighter());
+draw();
+</script></body></html>
